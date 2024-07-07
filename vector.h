@@ -69,10 +69,10 @@ void register_user_search_comparison_fn (Vector *vec,
  */
 
 // Library print callback function
-void printVector (Vector *vec, print_fptr user_print_fn);
+void printVector (Vector *vec, const char *label);
 
 // Library sort callback function
-void sortVector (Vector *vec, compare_fptr user_sort_compare_fn);
+void sortVector (Vector *vec, size_t left, size_t right);
 
 // Library search callback function
 void searchVector (Vector *vec, search_fptr user_search_compare_fn);

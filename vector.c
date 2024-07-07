@@ -36,7 +36,7 @@ register_user_search_comparison_fn (Vector *vec,
 // Generic print function, requires user to register their own callback
 // function conforming to type `void (*foo)(void *)`
 void
-printVector (Vector *vec, print_fptr user_print_fn)
+printVector (Vector *vec, const char *label)
 {
   // Check if Vector is NULL
   NULLCHECK (vec->data);
@@ -55,11 +55,17 @@ printVector (Vector *vec, print_fptr user_print_fn)
       return;
     }
 
+   
+  printf ("%s : [", label);
   for (size_t i = 0; i < vec->size; i++)
     {
-      printf ("[%zu] = ", i);
       vec->user_print_fn ((char *)vec->data + i * vec->element_size);
+      if (i < (vec->size) - 1)
+        printf (",");
+      else
+        printf ("]");
     }
+  puts (" ");
 }
 
 // MergeSort & helper function employing generic comparison callback
@@ -135,6 +141,19 @@ mergesort (Vector *vec, size_t left, size_t right, compare_fptr comp)
   // Then merge subarrays into sorted array
   merge (vec, left, mid, right, comp, temp);
   free (temp);
+}
+
+void
+sortVector (Vector *vec, size_t left, size_t right)
+{
+  if (!vec->user_sort_compare_fn)
+    {
+      puts ("No comparison callback registered.");
+      return;
+    }
+
+  mergesort (vec, left, right, vec->user_sort_compare_fn);
+  return;
 }
 
 /**

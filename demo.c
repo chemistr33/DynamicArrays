@@ -9,71 +9,75 @@ print_double (void *element)
   printf ("%f\n", *(double *)element);
 }
 
+// print integer callback
+void
+print_int (void *element)
+{
+  printf ("%d", *(int *)element);
+}
+
+// integer comparison callback
+int
+compare_int (const void *_a, const void *_b)
+{
+  int a = *(int *)_a;
+  int b = *(int *)_b;
+
+  if (a < b)
+    {
+      return -1;
+    }
+  else if (a == b)
+    {
+      return 0;
+    }
+  else
+    {
+      return 1;
+    }
+}
+
 int
 main (int argc, char **argv)
 {
   Vector vec;
 
   init_vector (&vec, sizeof (double));
-  register_user_print_fn (&vec, &print_double);
+  register_user_print_fn (&vec, &print_int);
+  register_user_sort_comparison_fn (&vec, &compare_int);
+  push_back (&vec, &(int){ 6 });
+  push_back (&vec, &(int){ 7 });
+  push_back (&vec, &(int){ 1 });
+  push_back (&vec, &(int){ 0 });
+  push_back (&vec, &(int){ 0 });
+  push_back (&vec, &(int){ 2 });
+  push_back (&vec, &(int){ 4 });
 
-  push (&vec, &(double){ 1.1 });
-  push (&vec, &(double){ 2.2 });
-  push (&vec, &(double){ 3.3 });
-  push (&vec, &(double){ 4.4 });
-  push (&vec, &(double){ 5.55555 });
-  push (&vec, &(double){ 6.6 });
-  push (&vec, &(double){ 7.7 });
-  push (&vec, &(double){ 8.8 });
-  push (&vec, &(double){ 9.9 });
+  printVector (&vec, "original vector");
 
-  printf ("Size: %zu, Capacity: %zu\n", vec.size, vec.capacity);
-  printVector (&vec, print_double);
+  sortVector (&vec, 0, vec.size);
 
-  printf ("\n---------------------------------------------------------\n");
+  printVector (&vec, "sorted vector  ");
 
-  double temp = *(double *)(vec.data + 4 * vec.element_size);
-  insert (&vec, 0, &temp);
-  push_back (&vec, &temp);
-  printf ("Size: %zu, Capacity: %zu\n", vec.size, vec.capacity);
+  Vector vec2;
+  init_vector (&vec2, sizeof (double));
+  register_user_print_fn (&vec2, &print_int);
+  register_user_sort_comparison_fn (&vec2, &compare_int);
+  push_back (&vec2, &(int){ -5 });
+  push_back (&vec2, &(int){ 3 });
+  push_back (&vec2, &(int){ 3 });
+  push_back (&vec2, &(int){ 0 });
+  push_back (&vec2, &(int){ 2 });
+  push_back (&vec2, &(int){ 11 });
+  push_back (&vec2, &(int){ 8 });
+  push_back (&vec2, &(int){ 999 });
 
-  shrink_to_fit (&vec);
-  puts ("after shrink_to_fit()...");
-  printf ("Size: %zu, Capacity: %zu\n", vec.size, vec.capacity);
-  printVector (&vec, print_double);
+  printVector(&vec2, "       vec2");
+  sortVector(&vec2,0,vec2.size);
+  printVector(&vec2, "sorted vec2");
 
-  void *someElement = at (&vec, 7);
-  printf ("%f is the element at index 7\n", *(double *)someElement);
-  printf ("\n---------------------------------------------------------\n");
 
-  insert (&vec, 10, &(double){ 9.999999 });
-  alterElement (&vec, 11, &(double){ 12345.6789 });
-
-  printVector (&vec, print_double);
-
-  printf ("\nOk let's check some more stuff, note we changed [11]...\n");
-  printf ("front() = %f\nat(&vec,10) = %f\nback() = %f\n",
-          *(double *)(front (&vec)), *(double *)at (&vec, 10),
-          *(double *)back (&vec));
-
-  printf ("\n\nClear() test...\n");
-  clear (&vec);
-  printVector (&vec, print_double);
-  free_vector (&vec);
-  printVector (&vec, print_double);
+  free_vector(&vec);
+  free_vector(&vec2);
   return 0;
 }
-
-#if 0
-
-void printVector(Vector *vec)
-{
-	for (int i = 0; i < vec->size - 1; i++)
-	{
-		printf("[%d] = %zu\n",
-			   i,
-			   *(double *)((char *)vec->data + i * vec->element_size));
-	}
-}
-
-#endif
