@@ -1,7 +1,6 @@
 #include "vector.h"
 /**
  *  Callback Registration
- *
  */
 
 // Register LibUser Print Function
@@ -70,8 +69,10 @@ merge (Vector *vec, size_t left, size_t mid, size_t right, compare_fptr comp,
 {
   size_t i = left, j = mid, k = 0;
 
+  // compare i and j, store to k position in temp
   while (i < mid && j < right)
     {
+      // if element i <= element j, copy ith element to k in temp
       if (comp ((char *)vec->data + i * vec->element_size,
                 (char *)vec->data + j * vec->element_size)
           <= 0)
@@ -81,6 +82,7 @@ merge (Vector *vec, size_t left, size_t mid, size_t right, compare_fptr comp,
                   vec->element_size);
           i++;
         }
+      // otherwise i > j, copy jth element to k in temp
       else
         {
           memcpy ((char *)temp + k * vec->element_size,
@@ -90,7 +92,7 @@ merge (Vector *vec, size_t left, size_t mid, size_t right, compare_fptr comp,
         }
       k++;
     }
-
+  // any remaining i's get copied to k
   while (i < mid)
     {
       memcpy ((char *)temp + k * vec->element_size,
@@ -98,7 +100,7 @@ merge (Vector *vec, size_t left, size_t mid, size_t right, compare_fptr comp,
       i++;
       k++;
     }
-
+  // any remaining j's get copied to k
   while (j < right)
     {
       memcpy ((char *)temp + k * vec->element_size,
@@ -107,6 +109,7 @@ merge (Vector *vec, size_t left, size_t mid, size_t right, compare_fptr comp,
       k++;
     }
 
+  // copy temp to vector starting at left bound
   memcpy ((char *)vec->data + left * vec->element_size, temp,
           k * vec->element_size);
 }
@@ -120,15 +123,16 @@ mergesort (Vector *vec, size_t left, size_t right, compare_fptr comp)
       return;
     }
 
+  // Recursively divide up vector into subarrays of length 1...
   size_t mid = left + (right - left) / 2;
   mergesort (vec, left, mid, comp);
   mergesort (vec, mid, right, comp);
 
-  // Allocate a temp Vector, here's your space complexity
+  // Allocate a temp Vector
   void *temp = malloc ((right - left) * vec->element_size);
   MEMCHECK (temp);
 
-  // Merge all the individual
+  // Then merge subarrays into sorted array
   merge (vec, left, mid, right, comp, temp);
   free (temp);
 }
