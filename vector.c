@@ -1,4 +1,5 @@
 #include "vector.h"
+#include "bit64.h"
 /**
  *  Callback Registration
  */
@@ -8,24 +9,15 @@ void
 register_user_print_fn (Vector *vec, print_fptr user_print_fn)
 {
   NULLCHECK (vec);
-  vec->user_print_fn = user_print_fn;
+  vec->print_fn = user_print_fn;
 }
 
 // Register user sort comparison function
 void
-register_user_sort_comparison_fn (Vector *vec, compare_fptr user_sort_fn)
+register_user_compare_fn (Vector *vec, compare_fptr user_sort_fn)
 {
   NULLCHECK (vec);
-  vec->user_sort_compare_fn = user_sort_fn;
-}
-
-// Register user search comparison function
-void
-register_user_search_comparison_fn (Vector *vec,
-                                    search_fptr user_search_compare_fn)
-{
-  NULLCHECK (vec);
-  vec->user_search_compare_fn = user_search_compare_fn;
+  vec->compare_fn = user_sort_fn;
 }
 
 /**
@@ -42,7 +34,7 @@ printVector (Vector *vec, const char *label)
   NULLCHECK (vec->data);
 
   // Check if print callback function was ever registers by user
-  if (!vec->user_print_fn)
+  if (!vec->print_fn)
     {
       fprintf (stderr, "Print function not registered by user.\n");
       return;
@@ -55,20 +47,20 @@ printVector (Vector *vec, const char *label)
       return;
     }
 
-   
-  printf ("%s : [", label);
+  printf (ANSI_BLUE "%s : [", label);
   for (size_t i = 0; i < vec->size; i++)
     {
-      vec->user_print_fn ((char *)vec->data + i * vec->element_size);
+      vec->print_fn ((char *)vec->data + i * vec->element_size);
       if (i < (vec->size) - 1)
-        printf (",");
+        printf (ANSI_BLUE","ANSI_RESET);
       else
-        printf ("]");
+        printf (ANSI_BLUE "]"ANSI_RESET );
     }
   puts (" ");
 }
 
-// MergeSort & helper function employing generic comparison callback
+// Helper function employing generic comparison callback, combines elements
+// into a subarray that is pasted over a region of the original array.
 void
 merge (Vector *vec, size_t left, size_t mid, size_t right, compare_fptr comp,
        void *temp)
@@ -120,6 +112,8 @@ merge (Vector *vec, size_t left, size_t mid, size_t right, compare_fptr comp,
           k * vec->element_size);
 }
 
+// Recursively breaks down vector into single elements, then merges all the
+// single elements into subarrays and the subarrays back into a sorted vector.
 void
 mergesort (Vector *vec, size_t left, size_t right, compare_fptr comp)
 {
@@ -143,17 +137,72 @@ mergesort (Vector *vec, size_t left, size_t right, compare_fptr comp)
   free (temp);
 }
 
+// Outermost wrapper for mergesort() & merge() functions, requires registration
+// of comparison callback
 void
 sortVector (Vector *vec, size_t left, size_t right)
 {
-  if (!vec->user_sort_compare_fn)
+  if (!vec->compare_fn)
     {
       puts ("No comparison callback registered.");
       return;
     }
 
-  mergesort (vec, left, right, vec->user_sort_compare_fn);
+  mergesort (vec, left, right, vec->compare_fn);
+
+  // pos 0 of control word 1 = sorted 0 = unsorted
+  SET_BIT (vec->ctrl_word, 0);
+
   return;
+}
+
+/**
+ * binarySearch
+ * -> FIRST sets it to find the first match
+ * -> LAST sets it to find the last match
+ */
+int
+searchVector (Vector *vec, void *key, int searchType)
+{
+  if (!CHECK_BIT (vec->ctrl_word, 0))
+    {
+      fprintf (stderr, "searchVector: Vector unsorted.\n");
+      return -1;
+    }
+
+  int left = 0;
+  int right = vec->size; // Exclusive upper bound
+  int result = -1;
+
+  while (left < right)
+    {
+      int mid = left + (right - left) / 2;
+      int comparison = vec->compare_fn (key, (char *)vec->data
+                                                 + (mid * vec->element_size));
+
+      if (comparison == 0)
+        {
+          result = mid; // Key found
+          if (searchType == FIRST)
+            {
+              right = mid; // continue search in left half
+            }
+          else
+            {
+              left = mid + 1; // continue search in right half
+            }
+        }
+      else if (comparison < 0)
+        {
+          right = mid;
+        }
+      else
+        {
+          left = mid + 1;
+        }
+    }
+
+  return result;
 }
 
 /**
@@ -167,6 +216,7 @@ init_vector (Vector *vec, size_t elem_size)
   vec->data = NULL;
   vec->size = 0;
   vec->capacity = 0;
+  vec->ctrl_word = 0ULL;
   vec->element_size = elem_size;
 }
 

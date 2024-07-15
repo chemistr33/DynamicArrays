@@ -7,11 +7,16 @@
  *    GitHub CoPilot
  */
 
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "ANSI_colors.h"
 #ifndef vector__h__
 #define vector__h__
+
+#define FIRST 0
+#define LAST 1
 
 /**
  * typedefs
@@ -24,9 +29,6 @@ typedef void (*print_fptr) (void *);
 // fpointer for sort comparison function
 typedef int (*compare_fptr) (const void *, const void *);
 
-// fpointer for search comparison function
-typedef void (*search_fptr) (void *);
-
 /**
  * Vector Data Structure
  */
@@ -36,9 +38,9 @@ typedef struct
   size_t size;
   size_t capacity;
   size_t element_size;
-  print_fptr user_print_fn;
-  compare_fptr user_sort_compare_fn;
-  search_fptr user_search_compare_fn;
+  print_fptr print_fn;
+  compare_fptr compare_fn;
+  uint64_t ctrl_word;
 } Vector;
 
 /**
@@ -52,16 +54,11 @@ typedef struct
  *
  */
 
-// Register LibUser Print Function
+// Register user print function
 void register_user_print_fn (Vector *vec, print_fptr user_print_fn);
 
-// Register LibUser Sort Function, Option 1
-void register_user_sort_comparison_fn (Vector *vec,
-                                       compare_fptr user_sort_compare_fn);
-
-// Register LibUser Search Function, Option 1
-void register_user_search_comparison_fn (Vector *vec,
-                                         search_fptr user_search_compare_fn);
+// Register user comparison function
+void register_user_compare_fn (Vector *vec, compare_fptr user_sort_compare_fn);
 
 /**
  * Callback Functions
@@ -75,7 +72,7 @@ void printVector (Vector *vec, const char *label);
 void sortVector (Vector *vec, size_t left, size_t right);
 
 // Library search callback function
-void searchVector (Vector *vec, search_fptr user_search_compare_fn);
+int searchVector (Vector *vec, void *key, int searchType);
 
 /**
  * Init. & Destroy
